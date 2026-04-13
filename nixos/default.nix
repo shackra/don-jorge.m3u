@@ -53,18 +53,21 @@ let
 
             ExecStart =
               let
-                buildChannel =
+                channelToYAML =
                   ch:
-                  lib.filterAttrs (n: v: v != null && v != "" && v != { }) {
-                    name = ch.name;
-                    url = ch.url;
-                    headers = ch.headers;
-                    logo = ch.logo;
-                    group = ch.group;
-                  };
+                  let
+                    base = {
+                      name = ch.name;
+                      url = ch.url;
+                    };
+                    withHeaders = if ch.headers == { } then base else base // { headers = ch.headers; };
+                    withLogo = if ch.logo == "" then withHeaders else withHeaders // { logo = ch.logo; };
+                    withGroup = if ch.group == "" then withLogo else withLogo // { group = ch.group; };
+                  in
+                  withGroup;
                 channelsYaml = packages.writeText "channels.yaml" (
                   generators.toYAML { } {
-                    channels = map buildChannel cfg.channels;
+                    channels = map channelToYAML cfg.channels;
                   }
                 );
               in
