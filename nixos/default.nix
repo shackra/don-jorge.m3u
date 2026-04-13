@@ -37,7 +37,7 @@ in
     enable = mkEnableOption "Don Jorge M3U playlist proxy service";
     package = mkOption {
       type = types.package;
-      default = pkgs.don-jorge;
+      default = mkPackageOption pkgs "don-jorge" { };
       description = "Don Jorge package";
     };
     address = mkOption {
