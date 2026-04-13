@@ -51,7 +51,10 @@
         }
       );
 
-      nixosModules.default = import ./nixos { lib = nixpkgs.lib; };
+      nixosModules.default = import ./nixos {
+        lib = nixpkgs.lib;
+        inherit (nixpkgs) pkgs;
+      };
 
       overlays.default = final: prev: {
         don-jorge = self.packages.${final.stdenv.system}.don-jorge;
