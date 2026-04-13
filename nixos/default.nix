@@ -39,7 +39,7 @@ in
 
     package = mkOption {
       type = types.package;
-      defaultText = "pkgs.don-jorge";
+      defaultText = pkgs: pkgs.don-jorge;
       description = "Don Jorge package to use";
     };
 
