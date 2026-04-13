@@ -1,5 +1,4 @@
-{ lib }:
-
+{ lib, pkgs, ... }:
 with lib;
 
 let
@@ -18,17 +17,17 @@ let
         headers = mkOption {
           type = types.attrsOf types.str;
           default = { };
-          description = "HTTP headers to inject when proxying";
+          description = "HTTP headers to inject";
         };
         logo = mkOption {
           type = types.str;
           default = "";
-          description = "URL to the channel logo image";
+          description = "URL to the channel logo";
         };
         group = mkOption {
           type = types.str;
           default = "";
-          description = "Group title for the channel";
+          description = "Group title";
         };
       };
     };
@@ -36,28 +35,24 @@ in
 {
   options.services.don-jorge = {
     enable = mkEnableOption "Don Jorge M3U playlist proxy service";
-
     package = mkOption {
       type = types.package;
-      defaultText = pkgs: pkgs.don-jorge;
-      description = "Don Jorge package to use";
+      default = pkgs.don-jorge;
+      description = "Don Jorge package";
     };
-
     address = mkOption {
       type = types.str;
       default = ":8080";
-      description = "Address and port to listen on";
+      description = "Listen address";
     };
-
     channels = mkOption {
       type = types.listOf (types.submodule channelModule);
       default = [ ];
-      description = "List of TV channels to serve";
+      description = "List of TV channels";
     };
   };
 
   config =
-    { config, pkgs, ... }:
     let
       cfg = config.services.don-jorge;
     in
@@ -65,27 +60,24 @@ in
       systemd.services.don-jorge = {
         description = "Don Jorge M3U Playlist Proxy";
         wantedBy = [ "multi-user.target" ];
-
         serviceConfig = {
           Type = "simple";
           Restart = "always";
           RestartSec = "5s";
-
           ExecStart =
             let
-              makeChannel =
+              cleanedChannels = map (
                 ch:
-                (removeAttrs ch [
-                  "logo"
-                  "group"
-                ])
-                // (optionalAttrs (ch.headers != { }) { headers = ch.headers; })
-                // (optionalAttrs (ch.logo != "") { logo = ch.logo; })
-                // (optionalAttrs (ch.group != "") { group = ch.group; });
-              channelsYaml = pkgs.writeText "channels.yaml" (
-                generators.toYAML { } {
-                  channels = map makeChannel cfg.channels;
+                {
+                  inherit (ch) name url;
                 }
+                // (optionalAttrs (ch.headers != { }) { inherit (ch) headers; })
+                // (optionalAttrs (ch.logo != "") { inherit (ch) logo; })
+                // (optionalAttrs (ch.group != "") { inherit (ch) group; })
+              ) cfg.channels;
+
+              channelsYaml = pkgs.writeText "channels.yaml" (
+                generators.toYAML { } { channels = cleanedChannels; }
               );
             in
             "${cfg.package}/bin/don-jorge -channels ${channelsYaml} -addr ${cfg.address}";
